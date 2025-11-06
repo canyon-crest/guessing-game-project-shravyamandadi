@@ -20,7 +20,7 @@ let winStreak = 0;
 
 
 
-
+document.getElementById("date").textContent = time();
 setInterval(() => {
   document.getElementById("date").textContent = time();
 }, 1000);
