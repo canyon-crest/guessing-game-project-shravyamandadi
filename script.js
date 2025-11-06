@@ -1,6 +1,6 @@
 // global variables
 let level, answer, score, playerName;
-const levelArr = document.getElementsByClassName("level");
+const levelArr = document.getElementsByName("level");
 const scoreArr = [];
 const guess = document.getElementById("guess");
 const playBtn = document.getElementById("playBtn");
@@ -9,6 +9,10 @@ const giveUp = document.getElementById("giveUp");
 const msg = document.getElementById("msg");
 const wins = document.getElementById("wins");
 const avgScore = document.getElementById("avgScore");
+let startTime; 
+const timeArr = []; 
+let fastestTime = 0; 
+
 
 
 setInterval(() => {
@@ -31,13 +35,25 @@ document.getElementById("setNameBtn").addEventListener("click", () => {
   }
 });
 
-
+function scoreFeedback(score) {
+    if (score <= Math.ceil(level / 5)) {
+        return "Excellent!";
+    } else if (score <= Math.ceil(level / 2)) {
+        return "Good!";
+    } else if (score <= level) {
+        return "Okay!";
+    } else {
+        return "Better luck next time!";
+    }
+}
 
 function play(){
     score = 0;
+    startTime = new Date().getTime(); 
     playBtn.disabled = true;
     guessBtn.disabled = false;
     guess.disabled = false;
+    giveUp.disabled = false;
     for(let i=0; i<levelArr.length; i++){
         if(levelArr[i].checked){
             level = Number(levelArr[i].value);
@@ -55,17 +71,40 @@ function makeGuess(){
         msg.textContent = "Enter a VALID # 1-"+level;
         return;
     }
-    score++; //valid guess add 1 to score
-    if(userGuess>answer){
-        msg.textContent = "Too HIGH";
-    }
-    else if(userGuess<answer){
-        msg.textContent = "Too LOW";
-    }
-    else{
-        msg.textContent = "Correct! It took you" + score + "tries. Press play to play again";
+    score++; 
+
+    let diff = Math.abs(userGuess - answer); 
+
+    if(userGuess === answer){
+        let endTime = new Date().getTime();
+        let roundTime = (endTime - startTime) / 1000; // seconds
+        timeArr.push(roundTime);
+
+        if(fastestTime === 0 || roundTime < fastestTime){
+        fastestTime = roundTime;
+        }
+
+        let avgTime = timeArr.reduce((a,b)=>a+b,0) / timeArr.length;
+
+        msg.textContent = "Correct! It took you " + score+ " tries in " + roundTime.toFixed(2)+" seconds " +scoreFeedback(score)+" Fastest: "+ fastestTime.toFixed(2)+ " Avg: "+ avgTime.toFixed(2);
         updateScore();
         reset();
+    } else {
+        
+        let hint = "";
+        if(diff >= Math.ceil(level * 0.5)) { 
+            hint = "Cold";
+        } else if(diff >= Math.ceil(level * 0.2)) {
+            hint = "Warm";
+        } else {
+            hint = "Hot";
+        }
+
+        if(userGuess > answer){
+            msg.textContent = "Too HIGH: " + hint;
+        } else {
+            msg.textContent = "Too LOW: " + hint;
+        }
     }
 }
 function reset(){
@@ -158,16 +197,28 @@ function time(){
     let fullDate = month + " " + day + suffix + ", " + year + " " + hours + ":" + minutes + ":" + seconds;
     return fullDate;
 }
-function pressGiveUp() {
-  score = Number(level);
 
-  if (playerName) {
-    msg.textContent =playerName+"you gave up! The correct answer was" +answer;
-  } else {
-    msg.textContent = "You gave up! The correct answer was" + answer;
-  }
-  updateScore();
-  reset();
+function pressGiveUp() {
+    let endTime = new Date().getTime();
+    let roundTime = (endTime - startTime) / 1000; 
+    timeArr.push(roundTime);
+
+    // update fastestTime
+    if(fastestTime === 0 || roundTime < fastestTime){
+        fastestTime = roundTime;
+    }
+
+    let avgTime = timeArr.reduce((a,b)=>a+b,0) / timeArr.length;
+
+    score = Number(level);
+
+    if (playerName) {
+        msg.textContent = playerName + "you gave up! The correct answer was "+answer + scoreFeedback(score)+" Time: "+ roundTime.toFixed(2)+" Fastest: "+fastestTime.toFixed(2)+" Avg: "+avgTime.toFixed(2);
+    } else {
+        msg.textContent = "You gave up! The correct answer was " + answer+ scoreFeedback(score)+" Time: "+roundTime.toFixed(2)+" Fastest: "+fastestTime.toFixed(2)+" Avg: "+avgTime.toFixed(2);
+    }
+    updateScore();
+    reset();
 }
 
 
