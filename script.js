@@ -12,6 +12,12 @@ const avgScore = document.getElementById("avgScore");
 let startTime; 
 const timeArr = []; 
 let fastestTime = 0; 
+const roundTimerDisplay = document.getElementById("roundTimer");
+let roundInterval;
+const avgTimeDisplay = document.getElementById("avgTimeDisplay");
+let winStreak = 0;
+
+
 
 
 
@@ -22,7 +28,13 @@ setInterval(() => {
 // add event listeners
 playBtn.addEventListener("click",play);
 guessBtn.addEventListener("click",makeGuess);
+guess.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    makeGuess();
+  }
+});
 giveUp.addEventListener("click",pressGiveUp);
+
 
 document.getElementById("setNameBtn").addEventListener("click", () => {
   const input = document.getElementById("myInput").value;
@@ -50,6 +62,7 @@ function scoreFeedback(score) {
 function play(){
     score = 0;
     startTime = new Date().getTime(); 
+    roundInterval = setInterval(updateRoundTimer, 100);
     playBtn.disabled = true;
     guessBtn.disabled = false;
     guess.disabled = false;
@@ -79,6 +92,9 @@ function makeGuess(){
         let endTime = new Date().getTime();
         let roundTime = (endTime - startTime) / 1000; // seconds
         timeArr.push(roundTime);
+       
+        document.body.style.backgroundColor = "lightgreen";
+        setTimeout(() => document.body.style.backgroundColor = "", 500);
 
         if(fastestTime === 0 || roundTime < fastestTime){
         fastestTime = roundTime;
@@ -87,9 +103,15 @@ function makeGuess(){
         let avgTime = timeArr.reduce((a,b)=>a+b,0) / timeArr.length;
 
         msg.textContent = "Correct! It took you " + score+ " tries in " + roundTime.toFixed(2)+" seconds " +scoreFeedback(score)+" Fastest: "+ fastestTime.toFixed(2)+ " Avg: "+ avgTime.toFixed(2);
+        winStreak++;
+        document.getElementById("wins").textContent = "Total wins: " + scoreArr.length + " | Win streak: " + winStreak;
+
         updateScore();
+        updateAvgTime();
         reset();
     } else {
+        document.body.style.backgroundColor = "lightcoral";
+        setTimeout(() => document.body.style.backgroundColor = "", 500);
         
         let hint = "";
         if(diff >= Math.ceil(level * 0.5)) { 
@@ -100,6 +122,14 @@ function makeGuess(){
             hint = "Hot";
         }
 
+        if (hint === "Hot") {
+            msg.style.color = "red";
+        } else if (hint === "Warm") {
+            msg.style.color = "orange";
+        } else if (hint === "Cold") {
+            msg.style.color = "blue";
+        }
+        
         if(userGuess > answer){
             msg.textContent = "Too HIGH: " + hint;
         } else {
@@ -112,6 +142,8 @@ function reset(){
     guess.value = "";
     guess.placeholder="";
     playBtn.disabled = false;
+    clearInterval(roundInterval);
+    roundTimerDisplay.textContent = "0.00";
     for(let i=0; i<levelArr.length;i++){
         levelArr[i].disabled = false;
     }
@@ -217,8 +249,20 @@ function pressGiveUp() {
     } else {
         msg.textContent = "You gave up! The correct answer was " + answer+ scoreFeedback(score)+" Time: "+roundTime.toFixed(2)+" Fastest: "+fastestTime.toFixed(2)+" Avg: "+avgTime.toFixed(2);
     }
+    winStreak = 0;
+    document.getElementById("wins").textContent = "Total wins: " + scoreArr.length + " | Win streak: " + winStreak;
     updateScore();
     reset();
 }
 
-
+function updateRoundTimer() {
+  let current = new Date().getTime();
+  let elapsed = (current - startTime) / 1000;
+  roundTimerDisplay.textContent = elapsed.toFixed(2);
+}
+function updateAvgTime() {
+  if (timeArr.length > 0) {
+    let avgTime = timeArr.reduce((a,b)=>a+b,0) / timeArr.length;
+    avgTimeDisplay.textContent = avgTime.toFixed(2);
+  }
+}
